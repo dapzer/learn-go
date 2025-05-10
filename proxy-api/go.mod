@@ -7,3 +7,5 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
 )
+
+require github.com/h2non/bimg v1.1.9 // indirect
