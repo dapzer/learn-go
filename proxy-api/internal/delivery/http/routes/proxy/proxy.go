@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"proxy-api/internal/service/proxy"
+	"strconv"
 )
 
 type Opts struct {
@@ -48,6 +49,7 @@ func (s *handlers) getContent(w http.ResponseWriter, r *http.Request) {
 
 func (s *handlers) getImage(w http.ResponseWriter, r *http.Request) {
 	path := r.PathValue("everything")
+	query := r.URL.Query()
 
 	resp, err := s.service.GetImage(path)
 	if err != nil {
@@ -60,7 +62,26 @@ func (s *handlers) getImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err = io.Copy(w, resp.Body); err != nil {
+	defer resp.Body.Close()
+	sourceImage, err := io.ReadAll(resp.Body)
+	if err != nil {
+		http.Error(w, "Failed to process image", http.StatusInternalServerError)
+		return
+	}
+
+	sizeQuery := query.Get("size")
+	var size int
+	if sizeQuery != "" {
+		size, _ = strconv.Atoi(sizeQuery)
+	}
+
+	processedImage, err := s.service.ProccessImage(sourceImage, &size)
+	if err != nil {
+		http.Error(w, "Failed to process image", http.StatusInternalServerError)
+		return
+	}
+
+	if _, err = w.Write(processedImage); err != nil {
 		http.Error(w, "Internal error", http.StatusInternalServerError)
 		return
 	}

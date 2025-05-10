@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"github.com/h2non/bimg"
 	"net/http"
 	"net/url"
 	"proxy-api/internal/config"
@@ -52,4 +53,23 @@ func (s Service) GetImage(path string) (*http.Response, error) {
 	}
 
 	return resp, nil
+}
+
+func (s Service) ProccessImage(sourceImage []byte, size *int) ([]byte, error) {
+	processedImage := sourceImage
+	if size != nil && *size != 0 {
+		resizedImage, err := bimg.NewImage(processedImage).Process(bimg.Options{Width: *size})
+		if err != nil {
+			return nil, err
+		}
+		processedImage = resizedImage
+	}
+
+	convertedImage, err := bimg.NewImage(processedImage).Convert(bimg.WEBP)
+	if err != nil {
+		return nil, err
+	}
+	processedImage = convertedImage
+
+	return processedImage, nil
 }
